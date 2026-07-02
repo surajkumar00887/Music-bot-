@@ -564,7 +564,7 @@ async def show_summary_panel(query, context, quiz_id):
             [InlineKeyboardButton("🏁 Start Private Chat", callback_data=f"startprivate_{quiz_id}")],
             [InlineKeyboardButton("👥 Start in Group", url=f"https://t.me/{bot_username}?startgroup=quiz_{quiz_id}")],
             [InlineKeyboardButton("📢 Share Quiz", url=f"https://t.me/share/url?url=Check%20out%20this%20quiz:%20https://t.me/{bot_username}?start=quiz_{quiz_id}")],
-            [InlineKeyboardButton("✏️ Edit", callback_data=f"edit_{quiz_id}")]
+            [InlineKeyboardButton("✏��� Edit", callback_data=f"edit_{quiz_id}")]
         ]
         reply_markup = InlineKeyboardMarkup(inline_keyboard)
         await query.message.reply_text(summary_text, reply_markup=reply_markup, parse_mode="Markdown")
@@ -658,7 +658,9 @@ async def handle_confirm_private(update: Update, context: ContextTypes.DEFAULT_T
                 "quiz_started": True,
                 "poll_message_ids": {},
                 "setup_message_id": None,
-                "is_private": True
+                "is_private": True,
+                "quiz_paused": False,
+                "consecutive_no_answers": 0
             }
         
         await asyncio.sleep(1)
@@ -1179,7 +1181,9 @@ async def handle_ready_click(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 "poll_message_ids": {},
                 "setup_message_id": message_id,
                 "setup_panel_text": query.message.text,
-                "is_private": False
+                "is_private": False,
+                "quiz_paused": False,
+                "consecutive_no_answers": 0
             }
         else:
             # Update setup message ID if not already set
@@ -1246,6 +1250,59 @@ async def handle_ready_click(update: Update, context: ContextTypes.DEFAULT_TYPE)
         logging.error(f"Error in handle_ready_click: {e}")
         await query.answer("❌ Error", show_alert=True)
 
+async def handle_pause_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle quiz pause resume"""
+    try:
+        query = update.callback_query
+        await query.answer()
+        
+        # Parse: pausequiz_chat_id
+        parts = query.data.split("_")
+        chat_id = int(parts[1])
+        
+        if chat_id not in GROUP_GAMES:
+            await query.answer("❌ Quiz not found", show_alert=True)
+            return
+        
+        game = GROUP_GAMES[chat_id]
+        game["quiz_paused"] = False
+        game["consecutive_no_answers"] = 0
+        
+        await query.edit_message_text(
+            text="⏸ Quiz Resuming...\n\n🚀 Next question coming up!",
+            reply_markup=InlineKeyboardMarkup([])
+        )
+        
+        await asyncio.sleep(2)
+        asyncio.create_task(send_next_group_poll(chat_id, context))
+    except Exception as e:
+        logging.error(f"Error in handle_pause_quiz: {e}")
+        await query.answer("❌ Error", show_alert=True)
+
+async def handle_stop_quiz_from_pause(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle quiz stop from pause menu"""
+    try:
+        query = update.callback_query
+        await query.answer()
+        
+        # Parse: stopquiz_chat_id
+        parts = query.data.split("_")
+        chat_id = int(parts[1])
+        
+        if chat_id not in GROUP_GAMES:
+            await query.answer("❌ Quiz not found", show_alert=True)
+            return
+        
+        await query.edit_message_text(
+            text="❌ Quiz stopped!\n\n🏁 Final Result:",
+            reply_markup=InlineKeyboardMarkup([])
+        )
+        
+        await compile_group_leaderboard(chat_id, context)
+    except Exception as e:
+        logging.error(f"Error in handle_stop_quiz_from_pause: {e}")
+        await query.answer("❌ Error", show_alert=True)
+
 async def stop_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Stop the running quiz in group"""
     try:
@@ -1276,11 +1333,17 @@ async def send_next_group_poll(chat_id, context):
         game = GROUP_GAMES.get(chat_id)
         if not game:
             return
+        
+        # Check if quiz is paused
+        if game.get("quiz_paused"):
+            return
             
         qid = game["quiz_id"]
         
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
+        cursor.execute("SELECT title FROM quizzes WHERE quiz_id = ?", (qid,))
+        quiz_title = cursor.fetchone()[0]
         cursor.execute("SELECT timer FROM quizzes WHERE quiz_id = ?", (qid,))
         timer_data = cursor.fetchone()
         cursor.execute("SELECT question_text, options, correct_answer, pre_message, explanation FROM questions WHERE quiz_id = ?", (qid,))
@@ -1330,11 +1393,45 @@ async def send_next_group_poll(chat_id, context):
         
         # Check if quiz is still active before closing poll
         if chat_id in GROUP_GAMES:
+            game = GROUP_GAMES[chat_id]
+            
+            # Check if any user answered this question
+            answers_received = False
+            for uid, user_answers in game["user_answers"].items():
+                if game["current_q"] in user_answers:
+                    answers_received = True
+                    break
+            
             # 🔴 CLOSE POLL EXPLICITLY - This LOCKS the poll options
             try:
                 await context.bot.stop_poll(chat_id=chat_id, message_id=game["poll_message_ids"][game["current_q"]])
             except Exception as e:
                 logging.warning(f"Could not close poll: {e}")
+            
+            if not answers_received:
+                game["consecutive_no_answers"] += 1
+                logging.info(f"No answers for Q{game['current_q'] + 1}. Count: {game['consecutive_no_answers']}")
+                
+                # 🔴 AUTO-PAUSE after 2 consecutive questions with no answers
+                if game["consecutive_no_answers"] >= 2:
+                    game["quiz_paused"] = True
+                    
+                    pause_msg = f"⏸ **The quiz '{escape_markdown(quiz_title)}' was paused because nobody was answering.**"
+                    
+                    keyboard = [
+                        [InlineKeyboardButton("▶️ Resume Quiz", callback_data=f"pausequiz_{chat_id}")],
+                        [InlineKeyboardButton("⏹ Stop Quiz", callback_data=f"stopquiz_{chat_id}")]
+                    ]
+                    
+                    await context.bot.send_message(
+                        chat_id=chat_id,
+                        text=pause_msg,
+                        reply_markup=InlineKeyboardMarkup(keyboard),
+                        parse_mode="Markdown"
+                    )
+                    return
+            else:
+                game["consecutive_no_answers"] = 0
             
             game["current_q"] += 1
             asyncio.create_task(send_next_group_poll(chat_id, context))
@@ -1563,6 +1660,10 @@ def main():
         app.add_handler(CallbackQueryHandler(handle_question_detail, pattern="^editq_"))
         app.add_handler(CallbackQueryHandler(handle_delete_question, pattern="^delq_"))
         app.add_handler(CallbackQueryHandler(confirm_delete_question, pattern="^confirmdel_"))
+        
+        # 🔴 NEW: Quiz pause/resume handlers
+        app.add_handler(CallbackQueryHandler(handle_pause_quiz, pattern="^pausequiz_"))
+        app.add_handler(CallbackQueryHandler(handle_stop_quiz_from_pause, pattern="^stopquiz_"))
         
         app.add_handler(PollAnswerHandler(track_poll_answers))
         
