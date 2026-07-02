@@ -1,0 +1,6 @@
+# TELEGRAM QUIZ BOT CONFIGURATION (SAMPLE)
+
+# Render ya hosting par inhi names se Variable banayein
+
+BOT_TOKEN=8789532246:AAFgZNibsH0StaIgx1fGKOmm6c6HFKu_b3U
+OWNER_ID=7771481658
