@@ -147,22 +147,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("View My Quizzes 📚", callback_data="btn_viewquizzes")]
         ]
         
-        # Pehle niche wala container bhejenge
-        poll_button = KeyboardButton(
-            text="Create a Question",
-            request_poll=KeyboardButtonPollType(type="quiz")
-        )
-        bottom_container = ReplyKeyboardMarkup(
-            [[poll_button]], 
-            resize_keyboard=True,
-            one_time_keyboard=False
-        )
-        
-        await update.message.reply_text(
-            text="🔄 Bot container activated.", 
-            reply_markup=bottom_container
-        )
-
         # Fir aapka main inline keyboard wala message jayega
         await update.message.reply_text(welcome_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
     except Exception as e:
@@ -187,7 +171,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def receive_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
         context.user_data["quiz_build"]["title"] = update.message.text.strip()
-        await update.message.reply_text("Good. Now send me a description of your quiz. This is optional, you can /skip this step.")
+        await update.message.reply_text(
+            "Good. Now send me a description of your quiz. This is optional, you can /skip this step.",
+            reply_markup=ReplyKeyboardRemove()
+        )
         return DESCRIPTION
     except Exception as e:
         logging.error(f"Error in receive_title: {e}")
@@ -197,12 +184,26 @@ async def receive_desc(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     try:
         text = update.message.text
         context.user_data["quiz_build"]["description"] = "" if text.lower() == "/skip" else text.strip()
+        
+        # ========================================
+        # 🔴 SHOW BOTTOM CONTAINER (QUESTIONS STATE)
+        # ========================================
+        poll_button = KeyboardButton(
+            text="📊 Create a Question",
+            request_poll=KeyboardButtonPollType(type="quiz")
+        )
+        bottom_container = ReplyKeyboardMarkup(
+            [[poll_button]], 
+            resize_keyboard=True,
+            one_time_keyboard=False
+        )
+        
         await update.message.reply_text(
             f"Good. Your quiz '{context.user_data['quiz_build']['title']}' now has 0 questions. If you made a mistake, send /undo.\n\n"
             "💡 **Now send me a poll with your first question.\n\n"
             "Enable **Quiz Mode**, add 2-7 options, pick the correct one, and tap Create.\n\n"
             "Warning: this bot can't create anonymous polls.",
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=bottom_container
         )
         return QUESTIONS
     except Exception as e:
@@ -298,12 +299,26 @@ async def receive_pre_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         context.user_data.pop("current_question_index", None)
         
+        # ========================================
+        # 🔴 SHOW BOTTOM CONTAINER (QUESTIONS STATE)
+        # ========================================
+        poll_button = KeyboardButton(
+            text="📊 Create a Question",
+            request_poll=KeyboardButtonPollType(type="quiz")
+        )
+        bottom_container = ReplyKeyboardMarkup(
+            [[poll_button]], 
+            resize_keyboard=True,
+            one_time_keyboard=False
+        )
+        
         await update.message.reply_text(
             f"✅ Pre-message set! Your quiz now has {len(context.user_data['quiz_build']['questions'])} question(s).\n\n"
             "💬 **Next step:**\n"
             "• Send next question poll\n"
             "• Or\n"
-            "• type /done to finish quiz"
+            "• type /done to finish quiz",
+            reply_markup=bottom_container
         )
         return QUESTIONS
     except Exception as e:
@@ -315,7 +330,24 @@ async def handle_undo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         quiz = context.user_data.get("quiz_build")
         if quiz and quiz["questions"]:
             quiz["questions"].pop()
-            await update.message.reply_text(f"↩️ Last question removed! Quiz now has {len(quiz['questions'])} question(s).\n\nSend next question or /done.")
+            
+            # ========================================
+            # 🔴 KEEP BOTTOM CONTAINER (STILL IN QUESTIONS STATE)
+            # ========================================
+            poll_button = KeyboardButton(
+                text="📊 Create a Question",
+                request_poll=KeyboardButtonPollType(type="quiz")
+            )
+            bottom_container = ReplyKeyboardMarkup(
+                [[poll_button]], 
+                resize_keyboard=True,
+                one_time_keyboard=False
+            )
+            
+            await update.message.reply_text(
+                f"↩️ Last question removed! Quiz now has {len(quiz['questions'])} question(s).\n\nSend next question or /done.",
+                reply_markup=bottom_container
+            )
         else:
             await update.message.reply_text("❌ No questions to remove!")
         return QUESTIONS
@@ -330,6 +362,9 @@ async def finish_quiz_creation(update: Update, context: ContextTypes.DEFAULT_TYP
             await update.message.reply_text("❌ Error: Quiz must have at least 1 question!")
             return QUESTIONS
         
+        # ========================================
+        # 🔴 HIDE BOTTOM CONTAINER (LEAVING QUESTIONS STATE)
+        # ========================================
         await update.message.reply_text(
             "⏱️ **Please set a time limit for questions:**\n\n"
             "Type any of these: 15, 30, 40, 60\n\n"
@@ -1403,23 +1438,6 @@ async def handle_back_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         # Purane message ko inline buttons ke sath edit karein
         await query.edit_message_text(welcome_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
-        
-        poll_button = KeyboardButton(
-            text="📊 Create a Question",
-            request_poll=KeyboardButtonPollType(type="quiz")
-        )
-        bottom_container = ReplyKeyboardMarkup(
-            [[poll_button]], 
-            resize_keyboard=True,
-            one_time_keyboard=False
-        )
-        
-        # Ek naya chota message bhej kar container ko screen par lane ke liye
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="⚡ Bottom menu synchronized.",
-            reply_markup=bottom_container
-        )
         
     except Exception as e:
         logging.error(f"Error in handle_back_main: {e}")
