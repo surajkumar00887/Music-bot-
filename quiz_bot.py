@@ -140,7 +140,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "👋 **Welcome to Premium Quiz Bot!**\n\n"
             "Niche diye gaye buttons se aap apna naya quiz bana sakte hain ya pehle banaye huye quizzes dekh sakte hain:\n\n"
             "🖥️ /help - Help Menu\n"
-            "🚀 /newquiz - New Quiz Create Kare"
+            "🚀 /newquiz - New Quiz Create Kare\n"
+            "📚 /quizzes - View My Quizzes"
         )
         keyboard = [
             [InlineKeyboardButton("Create New Quiz 🚀", callback_data="btn_newquiz")],
@@ -158,7 +159,11 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         help_text = (
             "📖 **Help Menu**\n\n"
             "Aap is bot se quizzes bana kar apne dosto ke sath groups me realtime khel sakte hain.\n\n"
-            "💡 **Available Actions:**"
+            "💡 **Available Commands:**\n"
+            "/newquiz - नया quiz बनाएं\n"
+            "/quizzes - अपने सभी quizzes देखें\n"
+            "/help - यह help menu\n"
+            "/start - शुरुआत करें"
         )
         keyboard = [
             [InlineKeyboardButton("Create New Quiz 🚀", callback_data="btn_newquiz")],
@@ -167,6 +172,54 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(help_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
     except Exception as e:
         logging.error(f"Error in help_command: {e}")
+
+# ========================================
+# 🔴 NEW COMMAND: /quizzes
+# ========================================
+async def quizzes_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display user's quizzes directly via /quizzes command"""
+    try:
+        user_id = update.message.from_user.id
+        
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        # Fetch quizzes with question count
+        cursor.execute("""
+            SELECT q.quiz_id, q.title, q.timer, COUNT(qu.id) as question_count
+            FROM quizzes q
+            LEFT JOIN questions qu ON q.quiz_id = qu.quiz_id
+            WHERE q.creator_id = ?
+            GROUP BY q.quiz_id
+            ORDER BY q.quiz_id DESC
+        """, (user_id,))
+        rows = cursor.fetchall()
+        conn.close()
+
+        if not rows:
+            keyboard = [[InlineKeyboardButton("Create New Quiz 🚀", callback_data="btn_newquiz")]]
+            await update.message.reply_text(
+                text="❌ Aapne abhi tak koi quiz nahi banaya hai!\n\nNaya quiz banane ke liye 'Create New Quiz' button click karein.",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            return
+
+        # Build list with View buttons for each quiz - 2 buttons per row
+        text = "📚 **Aapke Banaye Huye Quizzes:**\n\n"
+        
+        keyboard = []
+        for idx, (qid, title, timer, q_count) in enumerate(rows, 1):
+            time_display = f"{timer}s" if timer < 60 else f"{timer // 60}m"
+            text += f"{idx}. **{escape_markdown(title)}**\n"
+            text += f"   ☞ {q_count} question{'s' if q_count != 1 else ''} | {time_display}/Q\n\n"
+            # Add View button for each quiz - 2 per row
+            if len(keyboard) == 0 or len(keyboard[-1]) == 2:
+                keyboard.append([])
+            keyboard[-1].append(InlineKeyboardButton(f"📖 Q{idx}", callback_data=f"viewq_{qid}"))
+        
+        await update.message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+    except Exception as e:
+        logging.error(f"Error in quizzes_command: {e}")
+        await update.message.reply_text("❌ Error loading quizzes. Please try again.")
 
 async def receive_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
@@ -1430,7 +1483,8 @@ async def handle_back_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "👋 **Welcome to Premium Quiz Bot!**\n\n"
             "Niche diye gaye buttons se aap apna naya quiz bana sakte hain ya pehle banaye huye quizzes dekh sakte hain:\n\n"
             "🖥️ /help - Help Menu\n"
-            "🚀 /newquiz - New Quiz Create Kare"
+            "🚀 /newquiz - New Quiz Create Kare\n"
+            "📚 /quizzes - View My Quizzes"
         )
         keyboard = [
             [InlineKeyboardButton("Create New Quiz 🚀", callback_data="btn_newquiz")],
@@ -1488,6 +1542,7 @@ def main():
         # Registering core structures hooks
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CommandHandler("help", help_command))
+        app.add_handler(CommandHandler("quizzes", quizzes_command))
         app.add_handler(CommandHandler("stop", stop_quiz))
         
         app.add_handler(new_quiz_handler)
