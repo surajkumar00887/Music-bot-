@@ -208,7 +208,7 @@ async def quizzes_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         # Build list with View buttons for each quiz - 2 buttons per row
-        text = "📚 **Aapke Banaye Huye Quizzes:**\n\n"
+        text = "📚 Aapke Banaye Huye Quizzes:\n\n"
         
         keyboard = []
         for idx, (qid, title, timer, q_count) in enumerate(rows, 1):
@@ -246,7 +246,7 @@ async def receive_desc(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         # 🔴 SHOW BOTTOM CONTAINER (QUESTIONS STATE)
         # ========================================
         poll_button = KeyboardButton(
-            text="📊 Create a Question",
+            text="Create a Question",
             request_poll=KeyboardButtonPollType(type="quiz")
         )
         bottom_container = ReplyKeyboardMarkup(
@@ -257,9 +257,10 @@ async def receive_desc(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         
         await update.message.reply_text(
             f"Good. Your quiz '{context.user_data['quiz_build']['title']}' now has 0 questions. If you made a mistake, send /undo.\n\n"
-            "💡 **Now send me a poll with your first question.\n\n"
-            "Enable **Quiz Mode**, add 2-7 options, pick the correct one, and tap Create.\n\n"
-            "Warning: this bot can't create anonymous polls.",
+            "💡 Now send me a poll with your first question.\n\n"
+            "Enable Quiz Mode, add 2-7 options, pick the correct one, and tap Create.\n\n"
+            "Warning: this bot can't create anonymous poll\n"
+             "Users in groups will see votes from other members.",
             reply_markup=bottom_container
         )
         return QUESTIONS
@@ -286,12 +287,12 @@ async def receive_poll(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         context.user_data["current_question_index"] = len(context.user_data["quiz_build"]["questions"]) - 1
         
         await update.message.reply_text(
-            f"✅ Question added! Your quiz now has {len(context.user_data['quiz_build']['questions'])} question(s).\n\n"
-            "💬 **Optional:** Send a message/media (text, image, video, etc.) that will be shown BEFORE this question to provide context.\n\n"
-            "⚡ **Quick options:**\n"
-            "• 📎 Send media/details to add context\n"
-            "• 📄 Send text message for pre-message\n"
-            "• ➕ Now Send the next question directly (auto-skips pre-message)"
+            f"✅ Question added! Your quiz now has {len(context.user_data['quiz_build']['questions'])} question.\n\n"
+            "⚡ Quick options:\n"
+            "➤ 📎 Send media | details (text, image, video, etc.) that will be add context\n"
+            "➤ 📄 Send text message for pre-message\n\n"
+            "💬 Optional:\n"
+            "➤ ➕ Now Send the next question directly (auto-skips pre-message)"
             
         )
         return PRE_MESSAGE
@@ -332,13 +333,13 @@ async def receive_pre_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             context.user_data["current_question_index"] = len(context.user_data["quiz_build"]["questions"]) - 1
             
             await update.message.reply_text(
-                f"✅ Question added! Your quiz now has {len(context.user_data['quiz_build']['questions'])} question(s).\n\n"
-                "💬 **Optional:** Send a message/media (text, image, video, etc.) that will be shown BEFORE this question to provide context.\n\n"
-                "⚡ **Quick options:**\n"
-                "• 📎 Send media/details to add context\n"
-                "• 📄 Send text message for pre-message\n"
-                "• ➕ Now Send the next question directly (auto-skips pre-message)"
-                
+                f"✅ Question added! Your quiz now has {len(context.user_data['quiz_build']['questions'])} question.\n\n"
+            "⚡ Quick options:\n"
+            "➤ 📎 Send media | details (text, image, video, etc.) that will be add context\n"
+            "➤ 📄 Send text message for pre-message\n\n"
+            "💬 Optional:\n"
+            "➤ ➕ Now Send the next question directly (auto-skips pre-message)"
+            
             )
             return PRE_MESSAGE
         
@@ -360,7 +361,7 @@ async def receive_pre_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         # 🔴 SHOW BOTTOM CONTAINER (QUESTIONS STATE)
         # ========================================
         poll_button = KeyboardButton(
-            text="📊 Create a Question",
+            text="Create a Question",
             request_poll=KeyboardButtonPollType(type="quiz")
         )
         bottom_container = ReplyKeyboardMarkup(
@@ -371,10 +372,10 @@ async def receive_pre_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         await update.message.reply_text(
             f"✅ Pre-message set! Your quiz now has {len(context.user_data['quiz_build']['questions'])} question(s).\n\n"
-            "💬 **Next step:**\n"
-            "• Send next question poll\n"
-            "• Or\n"
-            "• type /done to finish quiz",
+            "💬 Next step:\n"
+            "➤ Send next question poll\n"
+            "✨ Or\n"
+            "➤ type /done to finish quiz",
             reply_markup=bottom_container
         )
         return QUESTIONS
@@ -392,7 +393,7 @@ async def handle_undo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
             # 🔴 KEEP BOTTOM CONTAINER (STILL IN QUESTIONS STATE)
             # ========================================
             poll_button = KeyboardButton(
-                text="📊 Create a Question",
+                text="Create a Question",
                 request_poll=KeyboardButtonPollType(type="quiz")
             )
             bottom_container = ReplyKeyboardMarkup(
@@ -423,7 +424,7 @@ async def finish_quiz_creation(update: Update, context: ContextTypes.DEFAULT_TYP
         # 🔴 HIDE BOTTOM CONTAINER (LEAVING QUESTIONS STATE)
         # ========================================
         await update.message.reply_text(
-            "⏱️ **Please set a time limit for questions:**\n\n"
+            "⏱️ Please set a time limit for questions:\n\n"
             "Type any of these: 15, 30, 40, 60\n\n"
             "Example: Type '30' for 30 seconds per question",
             reply_markup=ReplyKeyboardRemove()
@@ -464,7 +465,7 @@ async def handle_timer_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data.pop("quiz_build", None)
         context.user_data.pop("quiz_build_creator_id", None)
         
-        await update.message.reply_text("✅ Timer set! Creating your quiz summary...")
+        await update.message.reply_text("✅ Timer set! Quiz created 👍")
         await show_summary_panel_text(update, context, qid)
         return ConversationHandler.END
     except Exception as e:
@@ -502,7 +503,7 @@ async def view_my_quizzes(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         # Build list with View buttons for each quiz - 2 buttons per row
-        text = "📚 **Aapke Banaye Huye Quizzes:**\n\n"
+        text = "📚 Aapke Banaye Huye Quizzes:\n\n"
         
         keyboard = []
         for idx, (qid, title, timer, q_count) in enumerate(rows, 1):
