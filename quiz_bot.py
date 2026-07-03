@@ -566,10 +566,10 @@ async def show_summary_panel(query, context, quiz_id):
         )
         
         inline_keyboard = [
-            [InlineKeyboardButton("🏁 Start Private Chat", callback_data=f"startprivate_{quiz_id}")],
-            [InlineKeyboardButton("👥 Start in Group", url=f"https://t.me/{bot_username}?startgroup=quiz_{quiz_id}")],
-            [InlineKeyboardButton("📢 Share Quiz", url=f"https://t.me/share/url?url=Check%20out%20this%20quiz:%20https://t.me/{bot_username}?start=quiz_{quiz_id}")],
-            [InlineKeyboardButton("✏��� Edit", callback_data=f"edit_{quiz_id}")]
+            [InlineKeyboardButton("Start quiz in Private Chat", callback_data=f"startprivate_{quiz_id}")],
+            [InlineKeyboardButton("Start quiz in Group", url=f"https://t.me/{bot_username}?startgroup=quiz_{quiz_id}")],
+            [InlineKeyboardButton("Share Quiz", url=f"https://t.me/share/url?url=Check%20out%20this%20quiz:%20https://t.me/{bot_username}?start=quiz_{quiz_id}")],
+            [InlineKeyboardButton("⚙️ Edit", callback_data=f"edit_{quiz_id}")]
         ]
         reply_markup = InlineKeyboardMarkup(inline_keyboard)
         await query.message.reply_text(summary_text, reply_markup=reply_markup, parse_mode="Markdown")
@@ -613,7 +613,7 @@ async def show_summary_panel_text(update, context, quiz_id):
             [InlineKeyboardButton("🏁 Start Private Chat", callback_data=f"startprivate_{quiz_id}")],
             [InlineKeyboardButton("👥 Start in Group", url=f"https://t.me/{bot_username}?startgroup=quiz_{quiz_id}")],
             [InlineKeyboardButton("📢 Share Quiz", url=f"https://t.me/share/url?url=Check%20out%20this%20quiz:%20https://t.me/{bot_username}?start=quiz_{quiz_id}")],
-            [InlineKeyboardButton("✏️ Edit", callback_data=f"edit_{quiz_id}")]
+            [InlineKeyboardButton("⚙️ Edit", callback_data=f"edit_{quiz_id}")]
         ]
         reply_markup = InlineKeyboardMarkup(inline_keyboard)
         await update.message.reply_text(summary_text, reply_markup=reply_markup, parse_mode="Markdown")
@@ -1274,7 +1274,7 @@ async def handle_pause_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
         game["consecutive_no_answers"] = 0
         
         await query.edit_message_text(
-            text="⏸ Quiz Resuming...\n\n🚀 Next question coming up!",
+            text="Quiz Resuming...\n\n🚀 Next question coming up!",
             reply_markup=InlineKeyboardMarkup([])
         )
         
