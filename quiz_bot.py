@@ -157,13 +157,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         help_text = (
-            "📖 **Help Menu**\n\n"
+            "📖 Help Menu\n\n"
             "Aap is bot se quizzes bana kar apne dosto ke sath groups me realtime khel sakte hain.\n\n"
-            "💡 **Available Commands:**\n"
-            "/newquiz - नया quiz बनाएं\n"
-            "/quizzes - अपने सभी quizzes देखें\n"
-            "/help - यह help menu\n"
-            "/start - शुरुआत करें"
+            "💡 Available Commands:\n"
+            "➤ /newquiz – Create a new quiz\n"
+            "➤ /quizzes – View your quizzes\n"
+            "➤ /start – Start the bot | quiz\n"
+            "➤ /stop – Stop running quiz (admin)\n"
+            "➤ /cancel – cancel old all activities\n\n"
+            "👥 Add the bot to a group and start quizzes\n"
+            "📢 For support, contact owner."
         )
         keyboard = [
             [InlineKeyboardButton("Create New Quiz 🚀", callback_data="btn_newquiz")],
