@@ -149,7 +149,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("View My Quizzes 📚", callback_data="btn_viewquizzes")]
         ]
         
-        # Fir aapka main inline keyboard wala message jayega
         await update.message.reply_text(welcome_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
     except Exception as e:
         logging.error(f"Error in start: {e}")
@@ -242,9 +241,6 @@ async def receive_desc(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         text = update.message.text
         context.user_data["quiz_build"]["description"] = "" if text.lower() == "/skip" else text.strip()
         
-        # ========================================
-        # 🔴 SHOW BOTTOM CONTAINER (QUESTIONS STATE)
-        # ========================================
         poll_button = KeyboardButton(
             text="Create a Question",
             request_poll=KeyboardButtonPollType(type="quiz")
@@ -260,7 +256,7 @@ async def receive_desc(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             "💡 Now send me a poll with your first question.\n\n"
             "Enable Quiz Mode, add 2-7 options, pick the correct one, and tap Create.\n\n"
             "Warning: this bot can't create anonymous poll\n"
-             "Users in groups will see votes from other members.",
+            "Users in groups will see votes from other members.",
             reply_markup=bottom_container
         )
         return QUESTIONS
@@ -293,7 +289,6 @@ async def receive_poll(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             "➤ 📄 Send text message for pre-message\n\n"
             "💬 Optional:\n"
             "➤ ➕ Now Send the next question directly (auto-skips pre-message)"
-            
         )
         return PRE_MESSAGE
     except Exception as e:
@@ -334,12 +329,11 @@ async def receive_pre_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             
             await update.message.reply_text(
                 f"✅ Question added! Your quiz now has {len(context.user_data['quiz_build']['questions'])} question.\n\n"
-            "⚡ Quick options:\n"
-            "➤ 📎 Send media | details (text, image, video, etc.) that will be add context\n"
-            "➤ 📄 Send text message for pre-message\n\n"
-            "💬 Optional:\n"
-            "➤ ➕ Now Send the next question directly (auto-skips pre-message)"
-            
+                "⚡ Quick options:\n"
+                "➤ 📎 Send media | details (text, image, video, etc.) that will be add context\n"
+                "➤ 📄 Send text message for pre-message\n\n"
+                "💬 Optional:\n"
+                "➤ ➕ Now Send the next question directly (auto-skips pre-message)"
             )
             return PRE_MESSAGE
         
@@ -357,9 +351,6 @@ async def receive_pre_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         context.user_data.pop("current_question_index", None)
         
-        # ========================================
-        # 🔴 SHOW BOTTOM CONTAINER (QUESTIONS STATE)
-        # ========================================
         poll_button = KeyboardButton(
             text="Create a Question",
             request_poll=KeyboardButtonPollType(type="quiz")
@@ -389,9 +380,6 @@ async def handle_undo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         if quiz and quiz["questions"]:
             quiz["questions"].pop()
             
-            # ========================================
-            # 🔴 KEEP BOTTOM CONTAINER (STILL IN QUESTIONS STATE)
-            # ========================================
             poll_button = KeyboardButton(
                 text="Create a Question",
                 request_poll=KeyboardButtonPollType(type="quiz")
@@ -420,9 +408,6 @@ async def finish_quiz_creation(update: Update, context: ContextTypes.DEFAULT_TYP
             await update.message.reply_text("❌ Error: Quiz must have at least 1 question!")
             return QUESTIONS
         
-        # ========================================
-        # 🔴 HIDE BOTTOM CONTAINER (LEAVING QUESTIONS STATE)
-        # ========================================
         await update.message.reply_text(
             "⏱️ Please set a time limit for questions:\n\n"
             "Type any of these: 15, 30, 40, 60\n\n"
@@ -482,7 +467,6 @@ async def view_my_quizzes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        # Fetch quizzes with question count
         cursor.execute("""
             SELECT q.quiz_id, q.title, q.timer, COUNT(qu.id) as question_count
             FROM quizzes q
@@ -502,7 +486,6 @@ async def view_my_quizzes(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        # Build list with View buttons for each quiz - 2 buttons per row
         text = "📚 Aapke Banaye Huye Quizzes:\n\n"
         
         keyboard = []
@@ -510,12 +493,10 @@ async def view_my_quizzes(update: Update, context: ContextTypes.DEFAULT_TYPE):
             time_display = f"{timer}s" if timer < 60 else f"{timer // 60}m"
             text += f"{idx}. **{escape_markdown(title)}**\n"
             text += f"   ☞ {q_count} question{'s' if q_count != 1 else ''} | {time_display}/Q\n\n"
-            # Add View button for each quiz - 2 per row
             if len(keyboard) == 0 or len(keyboard[-1]) == 2:
                 keyboard.append([])
             keyboard[-1].append(InlineKeyboardButton(f"📖 Q{idx}", callback_data=f"viewq_{qid}"))
         
-        # Back button on its own row
         keyboard.append([InlineKeyboardButton("Back to Main Menu 🔙", callback_data="back_main")])
         await query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
     except Exception as e:
@@ -747,10 +728,6 @@ async def back_to_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logging.error(f"Error in back_to_summary: {e}")
 
-# ==========================================
-# ⚙️ FULLY OPERATIONAL QUIZ EDITOR HANDLERS
-# ==========================================
-
 async def edit_question_trigger(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show list of questions to edit - 2 buttons per row"""
     try:
@@ -775,10 +752,8 @@ async def edit_question_trigger(update: Update, context: ContextTypes.DEFAULT_TY
         keyboard = []
         
         for idx, (q_id, q_text) in enumerate(questions, 1):
-            # Truncate long question text for display
             display_text = q_text[:30] + "..." if len(q_text) > 30 else q_text
             text += f"{idx}. {escape_markdown(display_text)}\n"
-            # Add button - 2 per row
             if len(keyboard) == 0 or len(keyboard[-1]) == 2:
                 keyboard.append([])
             keyboard[-1].append(InlineKeyboardButton(f"Q{idx}", callback_data=f"editq_{quiz_id}_{q_id}"))
@@ -802,7 +777,6 @@ async def show_question_detail_panel(query, context, quiz_id, question_id):
         cursor.execute("SELECT id, question_text, options, correct_answer, explanation, pre_message FROM questions WHERE id = ? AND quiz_id = ?", (question_id, quiz_id))
         q_data = cursor.fetchone()
         
-        # Get question number
         cursor.execute("SELECT COUNT(*) FROM questions WHERE quiz_id = ? AND id < ?", (quiz_id, question_id))
         q_number = cursor.fetchone()[0] + 1
         
@@ -815,7 +789,6 @@ async def show_question_detail_panel(query, context, quiz_id, question_id):
         q_id, q_text, options_json, correct_ans, explanation, pre_message = q_data
         options = json.loads(options_json)
         
-        # Build detailed preview message
         detail_text = f"❓ **Question #{q_number}** (Current Status: Active)\n\n"
         detail_text += f"**Question Text:** {escape_markdown(q_text)}\n\n"
         
@@ -839,7 +812,6 @@ async def show_question_detail_panel(query, context, quiz_id, question_id):
         else:
             detail_text += f"\n📖 **Explanation:** None set\n"
         
-        # Build action buttons - 1 per row (ek ke niche ek)
         keyboard = [
             [InlineKeyboardButton("✏️ Pre-message", callback_data=f"editpre_{quiz_id}_{q_id}")],
             [InlineKeyboardButton("🖥️ Explanation", callback_data=f"editexpl_{quiz_id}_{q_id}")],
@@ -863,7 +835,6 @@ async def handle_question_detail(update: Update, context: ContextTypes.DEFAULT_T
         query = update.callback_query
         await query.answer()
         
-        # Parse: editq_quiz_id_question_id
         parts = query.data.split("_")
         quiz_id = int(parts[1])
         question_id = int(parts[2])
@@ -879,7 +850,6 @@ async def edit_pre_message_trigger(update: Update, context: ContextTypes.DEFAULT
         query = update.callback_query
         await query.answer()
         
-        # Parse: editpre_quiz_id_question_id
         parts = query.data.split("_")
         quiz_id = int(parts[1])
         question_id = int(parts[2])
@@ -907,7 +877,6 @@ async def save_pre_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await update.message.reply_text("❌ Error: Session expired.")
             return ConversationHandler.END
         
-        # Handle /remove or /skip commands
         if text.lower() == "/remove":
             new_pre_msg = ""
         elif text.lower() == "/skip":
@@ -918,7 +887,6 @@ async def save_pre_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         else:
             new_pre_msg = text
         
-        # Update database
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         cursor.execute("UPDATE questions SET pre_message = ? WHERE id = ?", (new_pre_msg, q_id))
@@ -941,7 +909,6 @@ async def edit_explanation_trigger(update: Update, context: ContextTypes.DEFAULT
         query = update.callback_query
         await query.answer()
         
-        # Parse: editexpl_quiz_id_question_id
         parts = query.data.split("_")
         quiz_id = int(parts[1])
         question_id = int(parts[2])
@@ -969,7 +936,6 @@ async def save_explanation(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await update.message.reply_text("❌ Error: Session expired.")
             return ConversationHandler.END
         
-        # Handle /remove or /skip commands
         if text.lower() == "/remove":
             new_explanation = ""
         elif text.lower() == "/skip":
@@ -980,7 +946,6 @@ async def save_explanation(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         else:
             new_explanation = text
         
-        # Update database
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         cursor.execute("UPDATE questions SET explanation = ? WHERE id = ?", (new_explanation, q_id))
@@ -1002,12 +967,10 @@ async def handle_delete_question(update: Update, context: ContextTypes.DEFAULT_T
     try:
         query = update.callback_query
         
-        # Parse: delq_quiz_id_question_id
         parts = query.data.split("_")
         quiz_id = int(parts[1])
         question_id = int(parts[2])
         
-        # Show confirmation
         await query.edit_message_text(
             text="⚠️ **Are you sure you want to delete this question?**\n\n"
                  "This action cannot be undone!",
@@ -1027,7 +990,6 @@ async def confirm_delete_question(update: Update, context: ContextTypes.DEFAULT_
         query = update.callback_query
         await query.answer()
         
-        # Parse: confirmdel_quiz_id_question_id
         parts = query.data.split("_")
         quiz_id = int(parts[1])
         question_id = int(parts[2])
@@ -1156,11 +1118,6 @@ async def save_edited_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text("❌ Error updating timer. Please try again.")
         return ConversationHandler.END
 
-
-# ==========================================
-# 🎯 SINGLE READY BUTTON DRIVEN ACTIVATION
-# ==========================================
-
 async def handle_ready_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Auto-joins users and sets dynamic counter to verify activation benchmarks"""
     try:
@@ -1191,7 +1148,6 @@ async def handle_ready_click(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 "consecutive_no_answers": 0
             }
         else:
-            # Update setup message ID if not already set
             if GROUP_GAMES[chat_id].get("setup_message_id") is None:
                 GROUP_GAMES[chat_id]["setup_message_id"] = message_id
                 GROUP_GAMES[chat_id]["setup_panel_text"] = query.message.text
@@ -1202,7 +1158,6 @@ async def handle_ready_click(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await query.answer("🚀 Quiz countdown pehle hi shuru ho chuka hai!")
             return
 
-        # Auto-Join structure initialization execution
         if user_id not in game["joined_users"]:
             game["joined_users"][user_id] = f"@{user_name}" if query.from_user.username else user_name
             game["scores"][user_id] = {"score": 0, "total_time": 0.0}
@@ -1212,8 +1167,6 @@ async def handle_ready_click(update: Update, context: ContextTypes.DEFAULT_TYPE)
         ready_count = len(game["ready_users"])
         joined_count = len(game["joined_users"])
 
-        # Check if this is from external sharing link (single player mode)
-        # In single player mode (private chat), start with just 1 ready user
         is_private_chat = query.message.chat.type == "private"
         min_ready_required = 1 if is_private_chat else 2
 
@@ -1221,11 +1174,9 @@ async def handle_ready_click(update: Update, context: ContextTypes.DEFAULT_TYPE)
             game["quiz_started"] = True
             await query.answer("🎯 Target achieved! Quiz start ho rahi hai...")
             
-            # Only edit button, keep panel message same
-            keyboard = []  # No button - just empty
+            keyboard = []
             await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(keyboard))
             
-            # Send countdown messages instead of editing the setup message
             for count in ["5", "4", "3", "2", "1"]:
                 countdown_msg = await context.bot.send_message(chat_id=chat_id, text=count)
                 await asyncio.sleep(1)
@@ -1234,7 +1185,6 @@ async def handle_ready_click(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 except Exception as e:
                     logging.warning(f"Could not delete countdown message: {e}")
 
-            # Send banner message
             banner_msg = await context.bot.send_message(chat_id=chat_id, text="🔥 Get ready! Quiz shuru ho rahi hai... 🚀")
             await asyncio.sleep(5)
             try:
@@ -1245,10 +1195,7 @@ async def handle_ready_click(update: Update, context: ContextTypes.DEFAULT_TYPE)
             game["current_q"] = 0
             asyncio.create_task(send_next_group_poll(chat_id, context))
         else:
-            # Update only button with new count - panel message stays SAME
             keyboard = [[InlineKeyboardButton(f"I am ready!  ({ready_count})", callback_data=f"ready_{quiz_id}")]]
-            
-            # EDIT ONLY THE BUTTON, NOT THE WHOLE MESSAGE
             await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(keyboard))
             await query.answer("Aapne confirmation register kar di! 👍")
     except Exception as e:
@@ -1261,7 +1208,6 @@ async def handle_pause_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
         
-        # Parse: pausequiz_chat_id
         parts = query.data.split("_")
         chat_id = int(parts[1])
         
@@ -1290,7 +1236,6 @@ async def handle_stop_quiz_from_pause(update: Update, context: ContextTypes.DEFA
         query = update.callback_query
         await query.answer()
         
-        # Parse: stopquiz_chat_id
         parts = query.data.split("_")
         chat_id = int(parts[1])
         
@@ -1314,19 +1259,16 @@ async def stop_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.message.chat_id
         user_id = update.message.from_user.id
         
-        # Check if quiz is running in this chat
         if chat_id not in GROUP_GAMES:
             await update.message.reply_text("❌ Koi quiz is group me chal nahi rahi hai!")
             return
         
         game = GROUP_GAMES[chat_id]
         
-        # Check if quiz has started
         if not game.get("quiz_started"):
             await update.message.reply_text("❌ Quiz abhi start hi nahi huya hai!")
             return
         
-        # Stop the quiz and show leaderboard
         await update.message.reply_text("Quiz stop ho gaya! Final Result dikha raha hoon...")
         await compile_group_leaderboard(chat_id, context)
     except Exception as e:
@@ -1339,7 +1281,6 @@ async def send_next_group_poll(chat_id, context):
         if not game:
             return
         
-        # Check if quiz is paused
         if game.get("quiz_paused"):
             return
             
@@ -1363,7 +1304,6 @@ async def send_next_group_poll(chat_id, context):
             await compile_group_leaderboard(chat_id, context)
             return
 
-        # Tuple extraction verification execution
         timer = timer_data[0] if (timer_data and isinstance(timer_data, tuple)) else 30
         q = questions[game["current_q"]]
         q_text, options_json, correct_ans, pre_msg, explanation = q
@@ -1383,7 +1323,6 @@ async def send_next_group_poll(chat_id, context):
             explanation=explanation if explanation else None, is_anonymous=False
         )
         
-        # Store poll message ID for later closing
         game["poll_message_ids"][game["current_q"]] = poll_msg.message_id
         
         game["poll_map"][poll_msg.poll.id] = {
@@ -1393,21 +1332,17 @@ async def send_next_group_poll(chat_id, context):
             "question_index": game["current_q"]
         }
         
-        # Wait for timer, then close the poll and move to next question
         await asyncio.sleep(timer)
         
-        # Check if quiz is still active before closing poll
         if chat_id in GROUP_GAMES:
             game = GROUP_GAMES[chat_id]
             
-            # Check if any user answered this question
             answers_received = False
             for uid, user_answers in game["user_answers"].items():
                 if game["current_q"] in user_answers:
                     answers_received = True
                     break
             
-            # 🔴 CLOSE POLL EXPLICITLY - This LOCKS the poll options
             try:
                 await context.bot.stop_poll(chat_id=chat_id, message_id=game["poll_message_ids"][game["current_q"]])
             except Exception as e:
@@ -1417,7 +1352,6 @@ async def send_next_group_poll(chat_id, context):
                 game["consecutive_no_answers"] += 1
                 logging.info(f"No answers for Q{game['current_q'] + 1}. Count: {game['consecutive_no_answers']}")
                 
-                # 🔴 AUTO-PAUSE after 2 consecutive questions with no answers
                 if game["consecutive_no_answers"] >= 2:
                     game["quiz_paused"] = True
                     
@@ -1444,7 +1378,7 @@ async def send_next_group_poll(chat_id, context):
         logging.error(f"Error in send_next_group_poll: {e}")
 
 async def track_poll_answers(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Track poll answers from ALL users who participate, even if they didn't click Ready"""
+    """Track poll answers from ALL users who participate"""
     try:
         ans = update.poll_answer
         pid = ans.poll_id
@@ -1457,7 +1391,6 @@ async def track_poll_answers(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 correct_idx = poll_info["correct_idx"]
                 question_idx = poll_info["question_index"]
                 
-                # 🔴 FIX: Auto-add user to joined_users if they participate
                 if uid not in game["joined_users"]:
                     game["joined_users"][uid] = user_name
                     game["scores"][uid] = {"score": 0, "total_time": 0.0}
@@ -1467,7 +1400,6 @@ async def track_poll_answers(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 if uid not in game["user_answers"]:
                     game["user_answers"][uid] = {}
                 
-                # Numeric single index list matching evaluation mapping conversion
                 selected_idx = ans.option_ids[0] if ans.option_ids else -1
                 game["user_answers"][uid][question_idx] = {
                     "selected": selected_idx,  
@@ -1499,7 +1431,6 @@ async def compile_group_leaderboard(chat_id, context):
             correct_answers[idx] = options.index(correct_ans)
         
         final_scores = {}
-        # Include ALL users who attempted the quiz
         for uid in game["user_answers"].keys():
             final_scores[uid] = {"score": 0, "wrong": 0, "total_time": 0.0}
 
@@ -1517,7 +1448,7 @@ async def compile_group_leaderboard(chat_id, context):
                     start_time = game["question_start_times"].get(question_idx, answer_data["timestamp"])
                     if isinstance(start_time, datetime):
                         elapsed = (answer_data["timestamp"] - start_time).total_seconds()
-                        total_time += max(0, elapsed)  # Prevent negative times
+                        total_time += max(0, elapsed)
                 else:
                     wrong += 1
             
@@ -1525,22 +1456,17 @@ async def compile_group_leaderboard(chat_id, context):
         
         sorted_scores = sorted(final_scores.items(), key=lambda item: (-item[1]["score"], item[1]["total_time"]))[:50]
         
-        # ============ NEW RESULT DESIGN ============
         header = f"🏁 The quiz '{escape_markdown(quiz_title)}' has finished!\n\n"
-        
-        # Count total questions answered
         total_questions_answered = len(questions)
         subheader = f"📋 {total_questions_answered} questions answered\n"
         subheader += f"👥 Total Participants: {len(final_scores)}\n\n"
         
-        # Build leaderboard with new design
         leaderboard = ""
         for idx, (uid, meta) in enumerate(sorted_scores, 1):
             user_name = game["joined_users"].get(uid, "Unknown User")
             score = meta["score"]
             total_time = format_time(meta["total_time"])
             
-            # Determine rank/medal
             if idx == 1:
                 rank_icon = "🥇"
             elif idx == 2:
@@ -1550,15 +1476,11 @@ async def compile_group_leaderboard(chat_id, context):
             else:
                 rank_icon = f"{idx}."
             
-            # Format entry with new design
             leaderboard += f"{rank_icon}  {user_name}\n"
             leaderboard += f"          Right Ans: {score}/{total_questions_answered}\n"
             leaderboard += f"          To take time: ({total_time})\n\n"
         
-        # Add congratulations footer
         footer = "🏆 Congratulations to all participants!"
-        
-        # Combine all parts
         full_message = header + subheader + leaderboard + footer
         
         kb = [[InlineKeyboardButton("📢 Share Score", url="https://t.me/share/url?url=I%20played%20Laado%20Quiz%20Bot%20Challenge!")]]
@@ -1593,7 +1515,6 @@ async def handle_back_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("Create New Quiz 🚀", callback_data="btn_newquiz")],
             [InlineKeyboardButton("View My Quizzes 📚", callback_data="btn_viewquizzes")]
         ]
-        # Purane message ko inline buttons ke sath edit karein
         await query.edit_message_text(welcome_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
         
     except Exception as e:
@@ -1608,7 +1529,6 @@ def main():
     try:
         app = Application.builder().token(BOT_TOKEN).build()
         
-        # 🔁 COMPREHENSIVE DUAL CONVERSATION ROUTER MAPS (Creation + Live Editing)
         new_quiz_handler = ConversationHandler(
             entry_points=[
                 CommandHandler("newquiz", new_quiz_start),
@@ -1642,7 +1562,6 @@ def main():
             fallbacks=[CommandHandler("cancel", cancel)]
         )
         
-        # Registering core structures hooks
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CommandHandler("help", help_command))
         app.add_handler(CommandHandler("quizzes", quizzes_command))
@@ -1651,7 +1570,6 @@ def main():
         app.add_handler(new_quiz_handler)
         app.add_handler(quiz_edit_flow_handler)
 
-        # Core system triggers binding maps
         app.add_handler(CallbackQueryHandler(view_my_quizzes, pattern="^btn_viewquizzes$"))
         app.add_handler(CallbackQueryHandler(handle_back_main, pattern="^back_main$"))
         app.add_handler(CallbackQueryHandler(handle_view_quiz_callback, pattern="^viewq_"))
@@ -1667,7 +1585,6 @@ def main():
         app.add_handler(CallbackQueryHandler(handle_delete_question, pattern="^delq_"))
         app.add_handler(CallbackQueryHandler(confirm_delete_question, pattern="^confirmdel_"))
         
-        # 🔴 NEW: Quiz pause/resume handlers
         app.add_handler(CallbackQueryHandler(handle_pause_quiz, pattern="^pausequiz_"))
         app.add_handler(CallbackQueryHandler(handle_stop_quiz_from_pause, pattern="^stopquiz_"))
         
