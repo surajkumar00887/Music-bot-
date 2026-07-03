@@ -137,11 +137,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Normal private chat initialization layout
         welcome_text = (
-            "👋 **Welcome to Premium Quiz Bot!**\n\n"
-            "Niche diye gaye buttons se aap apna naya quiz bana sakte hain ya pehle banaye huye quizzes dekh sakte hain:\n\n"
-            "🖥️ /help - Help Menu\n"
-            "🚀 /newquiz - New Quiz Create Kare\n"
-            "📚 /quizzes - View My Quizzes"
+            "👋 Welcome to Premium Quiz Bot!\n\n"
+            "Aap is bot se quizzes bana kar apne dosto ke sath groups me realtime khel sakte hain.\n\n"
+            "💡 Check Available Commands:\n"
+            "➤ /help – Open help center\n\n"
+            "👥 Add the bot to a group and start quizzes\n"
+            "📢 For support, contact owner."
         )
         keyboard = [
             [InlineKeyboardButton("Create New Quiz 🚀", callback_data="btn_newquiz")],
@@ -1419,11 +1420,11 @@ async def send_next_group_poll(chat_id, context):
                 if game["consecutive_no_answers"] >= 2:
                     game["quiz_paused"] = True
                     
-                    pause_msg = f"⏸ **The quiz '{escape_markdown(quiz_title)}' was paused because nobody was answering.**"
+                    pause_msg = f"🖥️ The quiz '{escape_markdown(quiz_title)}' was paused because nobody was answering"
                     
                     keyboard = [
-                        [InlineKeyboardButton("▶️ Resume Quiz", callback_data=f"pausequiz_{chat_id}")],
-                        [InlineKeyboardButton("⏹ Stop Quiz", callback_data=f"stopquiz_{chat_id}")]
+                        [InlineKeyboardButton("Resume Quiz", callback_data=f"pausequiz_{chat_id}")],
+                        [InlineKeyboardButton("Stop Quiz", callback_data=f"stopquiz_{chat_id}")]
                     ]
                     
                     await context.bot.send_message(
@@ -1580,11 +1581,12 @@ async def handle_back_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await query.answer()
         welcome_text = (
-            "👋 **Welcome to Premium Quiz Bot!**\n\n"
-            "Niche diye gaye buttons se aap apna naya quiz bana sakte hain ya pehle banaye huye quizzes dekh sakte hain:\n\n"
-            "🖥️ /help - Help Menu\n"
-            "🚀 /newquiz - New Quiz Create Kare\n"
-            "📚 /quizzes - View My Quizzes"
+            "👋 Welcome to Premium Quiz Bot!\n\n"
+            "Aap is bot se quizzes bana kar apne dosto ke sath groups me realtime khel sakte hain.\n\n"
+            "💡 Check Available Commands:\n"
+            "➤ /help – Open help center\n\n"
+            "👥 Add the bot to a group and start quizzes\n"
+            "📢 For support, contact owner."
         )
         keyboard = [
             [InlineKeyboardButton("Create New Quiz 🚀", callback_data="btn_newquiz")],
